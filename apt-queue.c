@@ -24,11 +24,15 @@ int main( int argc, char** argv )
     else {
         struct flock fl;
 
+        // Use the exact same lock request APT and dpkg are establishing.
         fl.l_type = F_WRLCK;
         fl.l_whence = SEEK_SET;
         fl.l_start = 0;
         fl.l_len = 0;
 
+        // Try to set the file lock, sleep+loop if the error is EAGAIN,
+        // this means the resource was temporarially unavailable due to
+        // another running APT process.
         do {
             err = fcntl( lockH, F_SETLK, &fl );
 
@@ -38,27 +42,31 @@ int main( int argc, char** argv )
             }
 
             printf( "Could not get a lock %s - ", lockFile );
-            if ( errno == EACCES ) {
-                printf( "Permission Denied\n" );
-                // Stop the loop here, force err to no longer be -1
-                err = errno;
-            }
-            else if ( errno == EAGAIN ) {
-                printf( "Resource not available\n" );
+            if ( errno == EAGAIN ) {
+                printf( "Resource not available... sleeping\n" );
+                sleep( 1 );
             }
             else {
-                printf( "Error: %d\n", errno );
+                if ( errno == EACCES ) {
+                    printf( "Permission Denied\n" );
+                }
+                else {
+                    printf( "Unknown Error?: %d\n", errno );
+                }
+                // Set err to errno so we can use it as the program's
+                // return value.
+                err = errno;
             }
-            sleep( 1 );
-        } while ( err == -1 );
+        } while ( err == -1 && errno == EAGAIN );
     }
-
     close( lockH );
 
+    // OK, if err is zero, we're good to go. Run the command!
     if ( err == 0 ) {
         size_t length = 0;
         int i;
 
+        // Identify the length of the queued command for memory allocation
         for ( i = 1; i < argc; i++ )
             length += strlen( argv[ i ] ) + 1;
 
