@@ -1,0 +1,12 @@
+Source: apt-queue
+Section: admin
+Priority: optional
+Maintainer: Adam McDaniel <adam@jolicloud.org>
+Build-Depends: debhelper (>= 4.1.0), cdbs
+Standards-Version: 3.7.2
+
+Package: apt-queue
+Architecture: i386
+Depends: ${shlibs:Depends}
+Description: Utility to queue APT commands
+ Utility to queue APT commands
