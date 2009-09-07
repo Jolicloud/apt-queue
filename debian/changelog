@@ -1,4 +1,4 @@
-apt-queue (0.1) UNRELEASED; urgency=low
+apt-queue (0.1) robby; urgency=low
 
   * Initial release.
 
