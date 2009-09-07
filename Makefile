@@ -1,10 +1,17 @@
 SRC = apt-queue.c
 OBJ = $(SRC:.c=)
 
+DESTDIR=
+PREFIX=$(DESTDIR)/usr
+
 all: $(OBJ)
 
 clean:
 	rm -f $(OBJ)
 
 %: %.c
-	gcc -march=i386 -mtune=i386 $*.c -o $@
+	gcc $*.c -o $@
+
+install: $(OBJ)
+	install -m 0755 -d $(PREFIX)/bin
+	install -m 0755 $^ $(PREFIX)/bin
