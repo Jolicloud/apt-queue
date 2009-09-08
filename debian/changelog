@@ -1,3 +1,10 @@
+apt-queue (0.2) robby; urgency=low
+
+  * Do not depend on debhelper, cdbs
+  * Adding forking capabilities to apt-queue
+
+ -- Adam McDaniel <adam@jolicloud.org>  Tue, 08 Sep 2009 22:59:59 +0200
+
 apt-queue (0.1) robby; urgency=low
 
   * Initial release.
