@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,7 @@
 #include <sys/stat.h>
 
 #define DPKG_LOCK "/var/lib/dpkg/lock"
+#define LOG_FILE  "/var/log/apt-queue"
 
 int main( int argc, char** argv )
 {
@@ -15,6 +17,11 @@ int main( int argc, char** argv )
     char* lockFile = DPKG_LOCK;
     int lockH;
     int err;
+
+    // Ignore SIGHUP, gdebi likes to send it after installing an
+    // application when its postinst is complete, but this negates the
+    // purpose of queueing in the background.
+    signal( SIGHUP, SIG_IGN );
 
     cpid = fork();
 
@@ -24,10 +31,15 @@ int main( int argc, char** argv )
     }
     else if ( cpid > 0 ) {
         printf( "Backgrounding process, child PID: %d\n", cpid );
+        printf( "Logging to %s\n", LOG_FILE );
         exit( EXIT_SUCCESS );
     }
 
-    freopen( "/var/log/apt-queue.log", "a", stdout );
+    // Forward all STDOUT data to the log file, this is useful to log the
+    // system() call for later in a separate file
+    if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
+        printf( "FAIL!!!" );
+    }
 
     lockH = open( lockFile, O_RDWR );
     if ( lockH == -1 ) {
