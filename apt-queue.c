@@ -4,12 +4,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #define DPKG_LOCK "/var/lib/dpkg/lock"
 #define LOG_FILE  "/var/log/apt-queue"
+#define TIME_SIZE 256
+
+
+void print_time_msg( char* msg )
+{
+    time_t     cur;
+    struct tm* loc;
+    char       str[ TIME_SIZE ];
+
+    cur = time( NULL );
+    loc = localtime( &cur );
+    strftime( str, TIME_SIZE, "%F %T %z", loc );
+
+    printf( ">> %s: %s\n", str, msg );
+}
+
 
 int main( int argc, char** argv )
 {
@@ -40,6 +57,8 @@ int main( int argc, char** argv )
     if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
         printf( "FAIL!!!" );
     }
+
+    print_time_msg( "Starting Program" );
 
     lockH = open( lockFile, O_RDWR );
     if ( lockH == -1 ) {
@@ -122,6 +141,10 @@ int main( int argc, char** argv )
             free( cmd );
         }
     }
+
+    printf( ">> return err: %d\n", err );
+    print_time_msg( "Program Finished" );
+
     return err;
 }
 
