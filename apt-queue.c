@@ -11,9 +11,23 @@
 
 int main( int argc, char** argv )
 {
+    pid_t cpid;
     char* lockFile = DPKG_LOCK;
     int lockH;
     int err;
+
+    cpid = fork();
+
+    if ( cpid == -1 ) {
+        perror( "fork" );
+        exit( EXIT_FAILURE );
+    }
+    else if ( cpid > 0 ) {
+        printf( "Backgrounding process, child PID: %d\n", cpid );
+        exit( EXIT_SUCCESS );
+    }
+
+    freopen( "/var/log/apt-queue.log", "a", stdout );
 
     lockH = open( lockFile, O_RDWR );
     if ( lockH == -1 ) {
@@ -61,6 +75,7 @@ int main( int argc, char** argv )
     }
     close( lockH );
 
+
     // OK, if err is zero, we're good to go. Run the command!
     if ( err == 0 ) {
         size_t length = 0;
@@ -88,6 +103,8 @@ int main( int argc, char** argv )
 
             printf( "Running Queued Command: %s\n", cmd );
             printf( "-------------------------------------------\n", cmd );
+
+            fflush( NULL );
             err = system( cmd );
 
             free( cmd );
