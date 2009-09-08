@@ -1,11 +1,18 @@
-apt-queue (0.2) robby; urgency=low
+apt-queue (0.2.1) robby; urgency=low
+
+  * Added more logging and basic* signal handling
+  * Added some timestamp logging messages
+
+ -- Adam McDaniel <adam@jolicloud.org>  Wed, 09 Sep 2009 00:25:22 +0200
+
+apt-queue (0.2) UNRELEASED; urgency=low
 
   * Do not depend on debhelper, cdbs
   * Adding forking capabilities to apt-queue
 
  -- Adam McDaniel <adam@jolicloud.org>  Tue, 08 Sep 2009 22:59:59 +0200
 
-apt-queue (0.1) robby; urgency=low
+apt-queue (0.1) UNRELEASED; urgency=low
 
   * Initial release.
 
