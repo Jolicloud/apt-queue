@@ -1,3 +1,9 @@
+apt-queue (0.2.2) robby; urgency=low
+
+  * Implement setsid(2) to create new session if calling process dies
+
+ -- Adam McDaniel <adam@jolicloud.org>  Thu, 29 Jul 2010 11:50:20 -0600
+
 apt-queue (0.2.1) robby; urgency=low
 
   * Added more logging and basic* signal handling
