@@ -52,6 +52,10 @@ int main( int argc, char** argv )
         exit( EXIT_SUCCESS );
     }
 
+    // Ensure a new session group parent if caller process dies before
+    // apt-queue establishes the lock.
+    setsid();
+
     // Forward all STDOUT data to the log file, this is useful to log the
     // system() call for later in a separate file
     if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
