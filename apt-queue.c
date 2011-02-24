@@ -56,10 +56,13 @@ int main( int argc, char** argv )
     // apt-queue establishes the lock.
     setsid();
 
-    // Forward all STDOUT data to the log file, this is useful to log the
-    // system() call for later in a separate file
+    // Forward all STDOUT/STDERR data to the log file, this is useful to
+    // log the system() call for later in a separate file
     if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
-        printf( "FAIL!!!" );
+        printf( "Warning: Failed to freopen(3) stdout" );
+    }
+    if ( freopen( LOG_FILE, "a", stderr ) == NULL ) {
+        printf( "Warning: Failed to freopen(3) stderr" );
     }
 
     print_time_msg( "Starting Program" );
