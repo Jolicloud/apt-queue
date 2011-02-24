@@ -1,3 +1,13 @@
+apt-queue (0.2.3) robby; urgency=low
+
+  * Updated debian/control description & github URLs, use GPL license in
+    debian/copyright
+  * Also trap all STDERR data from system(), forward to the log file
+  * Force DEBIAN_FRONTEND to be noninteractive, this avoids a nasty
+    shock when dpkg-preconfigure tries to reopen stdin for input.
+
+ -- Adam McDaniel <adam@jolicloud.org>  Thu, 24 Feb 2011 12:57:22 -0700
+
 apt-queue (0.2.2) robby; urgency=low
 
   * Implement setsid(2) to create new session if calling process dies
