@@ -4,10 +4,24 @@ Priority: optional
 Maintainer: Adam McDaniel <adam@jolicloud.org>
 Build-Depends: debhelper (>= 4.1.0), cdbs
 Standards-Version: 3.7.2
+Vcs-Git: git://github.com/jolicloud/apt-queue.git
+Vcs-Browser: https://github.com/jolicloud/apt-queue
 
 Package: apt-queue
 Architecture: i386
 Enhances: apt
 Depends: ${shlibs:Depends}
-Description: Utility to queue APT commands
- Utility to queue APT commands
+Description: Utility to queue APT/dpkg commands, following an APT/dpkg program
+ The utility apt-queue can be used within debian packages to queue APT or
+ dpkg commands to run immediately after the an original APT/dpkg call has
+ completed. If one were to do this without apt-queue, you would get an
+ error message like: 
+ .
+ E: Could not get lock /var/lib/dpkg/lock - open (11: Resource temporarily
+ unavailable)
+ E: Unable to lock the administration directory (/var/lib/dpkg/), is
+ another process using it?
+ .
+ This is useful if some sort of postinst script requires a new 'apt-get
+ install' download, but such a dynamic requirement cannot be satisified
+ within a simple debian/control:Depends.
