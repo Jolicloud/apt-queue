@@ -143,6 +143,7 @@ int main( int argc, char** argv )
             printf( "-------------------------------------------\n", cmd );
 
             fflush( NULL );
+            setenv( "DEBIAN_FRONTEND", "noninteractive", 1 );
             err = system( cmd );
 
             free( cmd );
