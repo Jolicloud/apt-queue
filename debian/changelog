@@ -1,3 +1,14 @@
+apt-queue (0.2.4) robby-1.2; urgency=low
+
+  * Added a retry loop to re-attempt a failed queued command, up to 5
+    times.  This is a contingency if our lock is stolen after it's freed
+    by APT or dpkg, but before we've had a chance to execute our own
+    command.
+  * Add fflush() to the get_lock() function to record activity in real-
+    time to the log file.
+
+ -- Adam McDaniel <adam@jolicloud.org>  Tue, 08 Mar 2011 13:56:37 -0700
+
 apt-queue (0.2.3) robby; urgency=low
 
   * Updated debian/control description & github URLs, use GPL license in
