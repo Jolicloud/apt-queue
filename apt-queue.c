@@ -63,6 +63,7 @@ static int get_lock()
             printf( "Could not get a lock %s - ", lockFile );
             if ( errno == EAGAIN ) {
                 printf( "Resource not available... sleeping\n" );
+                fflush( NULL );
                 sleep( 1 );
             }
             else {
@@ -79,6 +80,7 @@ static int get_lock()
         } while ( err == -1 && errno == EAGAIN );
     }
     close( lockH );
+    fflush( NULL );
 
     return err;
 }
