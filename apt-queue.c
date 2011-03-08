@@ -12,6 +12,7 @@
 #define DPKG_LOCK "/var/lib/dpkg/lock"
 #define LOG_FILE  "/var/log/apt-queue"
 #define TIME_SIZE 256
+#define MAX_ATTEMPTS 5
 
 
 void print_time_msg( char* msg )
@@ -27,45 +28,11 @@ void print_time_msg( char* msg )
     printf( ">> %s: %s\n", str, msg );
 }
 
-
-int main( int argc, char** argv )
+static int get_lock()
 {
-    pid_t cpid;
     char* lockFile = DPKG_LOCK;
     int lockH;
-    int err;
-
-    // Ignore SIGHUP, gdebi likes to send it after installing an
-    // application when its postinst is complete, but this negates the
-    // purpose of queueing in the background.
-    signal( SIGHUP, SIG_IGN );
-
-    cpid = fork();
-
-    if ( cpid == -1 ) {
-        perror( "fork" );
-        exit( EXIT_FAILURE );
-    }
-    else if ( cpid > 0 ) {
-        printf( "Backgrounding process, child PID: %d\n", cpid );
-        printf( "Logging to %s\n", LOG_FILE );
-        exit( EXIT_SUCCESS );
-    }
-
-    // Ensure a new session group parent if caller process dies before
-    // apt-queue establishes the lock.
-    setsid();
-
-    // Forward all STDOUT/STDERR data to the log file, this is useful to
-    // log the system() call for later in a separate file
-    if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
-        printf( "Warning: Failed to freopen(3) stdout" );
-    }
-    if ( freopen( LOG_FILE, "a", stderr ) == NULL ) {
-        printf( "Warning: Failed to freopen(3) stderr" );
-    }
-
-    print_time_msg( "Starting Program" );
+    int err = 0;
 
     lockH = open( lockFile, O_RDWR );
     if ( lockH == -1 ) {
@@ -113,41 +80,100 @@ int main( int argc, char** argv )
     }
     close( lockH );
 
+    return err;
+}
 
-    // OK, if err is zero, we're good to go. Run the command!
-    if ( err == 0 ) {
-        size_t length = 0;
-        int i;
+static int process_cmd( int argc, char** argv )
+{
+    size_t length = 0;
+    int err = 0;
+    int i;
 
-        // Identify the length of the queued command for memory allocation
-        for ( i = 1; i < argc; i++ )
-            length += strlen( argv[ i ] ) + 1;
+    // Identify the length of the queued command for memory allocation
+    for ( i = 1; i < argc; i++ )
+        length += strlen( argv[ i ] ) + 1;
 
-        if ( length == 0 ) {
-            printf( "Nothing to run?\n" );
+    if ( length == 0 ) {
+        printf( "Nothing to run?\n" );
+    }
+    else {
+        char* cmd;
+
+        cmd = malloc( length );
+        length = 0;
+
+        for ( i = 1; i < argc; i++ ) {
+            strcpy( cmd + length, argv[ i ] );
+            length += strlen( argv[ i ] );
+            strcpy( cmd + length, " " );
+            length++;
         }
-        else {
-            char* cmd;
 
-            cmd = malloc( length );
-            length = 0;
+        printf( "Running Queued Command: %s\n", cmd );
+        printf( "-------------------------------------------\n", cmd );
 
-            for ( i = 1; i < argc; i++ ) {
-                strcpy( cmd + length, argv[ i ] );
-                length += strlen( argv[ i ] );
-                strcpy( cmd + length, " " );
-                length++;
-            }
+        fflush( NULL );
+        setenv( "DEBIAN_FRONTEND", "noninteractive", 1 );
+        err = system( cmd );
 
-            printf( "Running Queued Command: %s\n", cmd );
-            printf( "-------------------------------------------\n", cmd );
+        free( cmd );
+    }
 
-            fflush( NULL );
-            setenv( "DEBIAN_FRONTEND", "noninteractive", 1 );
-            err = system( cmd );
+    return err;
+}
 
-            free( cmd );
+int main( int argc, char** argv )
+{
+    pid_t cpid;
+    int err = 0;
+    int attempt = 0;
+
+    // Ignore SIGHUP, gdebi likes to send it after installing an
+    // application when its postinst is complete, but this negates the
+    // purpose of queueing in the background.
+    signal( SIGHUP, SIG_IGN );
+
+    cpid = fork();
+
+    if ( cpid == -1 ) {
+        perror( "fork" );
+        exit( EXIT_FAILURE );
+    }
+    else if ( cpid > 0 ) {
+        printf( "Backgrounding process, child PID: %d\n", cpid );
+        printf( "Logging to %s\n", LOG_FILE );
+        exit( EXIT_SUCCESS );
+    }
+
+    // Ensure a new session group parent if caller process dies before
+    // apt-queue establishes the lock.
+    setsid();
+
+    // Forward all STDOUT/STDERR data to the log file, this is useful to
+    // log the system() call for later in a separate file
+    if ( freopen( LOG_FILE, "a", stdout ) == NULL ) {
+        printf( "Warning: Failed to freopen(3) stdout" );
+    }
+    if ( freopen( LOG_FILE, "a", stderr ) == NULL ) {
+        printf( "Warning: Failed to freopen(3) stderr" );
+    }
+
+    print_time_msg( "Starting Program" );
+
+    for ( attempt = 0; attempt < MAX_ATTEMPTS; attempt++ ) {
+        // This get_lock() function waits indefinitely for a successful
+        // lock if it encounters a temporary failure (lock file is busy).
+        // If it's a permanent failure (lock is unlockable) it returns
+        // non-zero and is retried in this main loop up to MAX_ATTEMPTS times.
+        err = get_lock();
+        if ( err == 0 ) {
+            err = process_cmd( argc, argv );
+            // If err is 0, the queued command has executed cleanly.
+            if ( err == 0 )
+                break;
         }
+        printf( ">> got err: %d .. attempt %d of %d\n", err, attempt + 1,
+                MAX_ATTEMPTS );
     }
 
     printf( ">> return err: %d\n", err );
@@ -157,4 +183,4 @@ int main( int argc, char** argv )
 }
 
 
-// vim:et:ai:ts=4
+// vim:et:ai:ts=4:sw=4
